@@ -1,6 +1,6 @@
 FROM ubuntu:yakkety
 
-MAINTAINER Alexander Trost <galexrt@googlemail.com>
+MAINTAINER DESOLIC IT <it@desolic.de>
 
 ENV SINUS_USER="3000" \
     SINUS_GROUP="3000" \
