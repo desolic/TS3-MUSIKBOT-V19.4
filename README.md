@@ -1,6 +1,5 @@
 # TS3-MUSIKBOT
 DESOLIC-IT PROJECT 25G524
-FÜR WEITERE INFORMATIONEN RUFEN SIE DAS DOKUMENT "DESOLIC - LEITFADEN SINUSBOT" IM INTNET AUF.
 
 Gehärtetes Container-Image für einen TeamSpeak-3-Musikbot auf Basis von
 **TS3AudioBot** (Open Source, MIT). Headless (kein GUI-/VNC-Stack), non-root,
