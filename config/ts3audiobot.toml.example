@@ -1,0 +1,46 @@
+# =============================================================================
+# ts3audiobot.toml — KERN-Konfiguration (TEMPLATE / Härtungs-Leitfaden)
+# DESOLIC IT — Projekt 25G524
+#
+# WICHTIG:
+#   * Dies ist ein gehärtetes Start-Template. TS3AudioBot erzeugt beim ersten
+#     Start eine vollständige, kommentierte ts3audiobot.toml. Gleiche die hier
+#     gesetzten Schlüssel mit der von DEINER Version erzeugten Datei ab
+#     (Schema-Namen können sich zwischen Versionen unterscheiden).
+#   * Diese Datei enthält KEINE Geheimnisse. Verbindungs-Passwörter gehören in
+#     die bot.toml und werden über ein K8s-Secret eingespielt (NICHT einchecken).
+# =============================================================================
+
+[web]
+# WebAPI/Interface NUR clusterintern binden. TLS + AuthN via Ingress davor.
+enabled = true
+hosts = ["0.0.0.0"]      # im Container ok; nach außen NUR über TLS-Ingress
+port = 58913
+
+[web.api]
+# REST-API erfordert Token. Tokens NICHT hier ablegen -> pro Nutzer im Bot
+# generieren und sicher verteilen.
+enabled = true
+
+[web.interface]
+# Eingebautes Web-Interface; ebenfalls nur hinter dem TLS-Ingress erreichbar.
+enabled = true
+
+[tools]
+# Pfade auf die im Image mitgelieferten, verifizierten Binaries.
+# (Stehen via PATH=/opt/bin bereits bereit; explizit setzen schadet nicht.)
+ffmpeg-path = "/opt/bin/ffmpeg"
+youtube-dl-path = "/opt/bin/yt-dlp"
+
+[db]
+# Datenbank/Verlauf im gemounteten, ggf. verschlüsselten Volume.
+path = "/data/ts3audiobot.db"
+
+# -----------------------------------------------------------------------------
+# DATENSCHUTZ / TELEMETRIE
+#   TS3AudioBot kann anonyme Nutzungsstatistiken senden. Für DSGVO-konformen
+#   Betrieb DEAKTIVIEREN. Der Schlüsselname variiert je Version — in der
+#   generierten Datei nach "stats"/"telemetry" suchen und auf false setzen,
+#   z. B.:
+# -----------------------------------------------------------------------------
+# send-stats = false

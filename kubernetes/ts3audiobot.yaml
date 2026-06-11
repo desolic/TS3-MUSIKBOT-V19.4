@@ -1,0 +1,205 @@
+# =============================================================================
+# TS3-MUSIKBOT — TS3AudioBot, gehärtetes Kubernetes-Deployment
+# DESOLIC IT — Projekt 25G524
+#
+# Härtung gegenüber dem alten ReplicationController:
+#   * Deployment (apps/v1) statt deprecated RC
+#   * vollständiger securityContext: non-root, readOnlyRootFilesystem,
+#     drop ALL caps, seccomp RuntimeDefault, fsGroup -> kein Root-Start nötig
+#   * PersistentVolumeClaim statt hostPath (Node-Isolation, Encryption-at-Rest)
+#   * kein hostPort -> ClusterIP-Service + TLS-Ingress (kein Klartext-Login)
+#   * NetworkPolicy: Default-Deny mit gezielten Egress-Regeln
+#   * Konfiguration/Geheimnisse aus Secret (nicht im Image, nicht im Klartext)
+#   * Image per Digest gepinnt, automountServiceAccountToken aus
+# =============================================================================
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: musikbot
+  labels:
+    pod-security.kubernetes.io/enforce: restricted   # PodSecurity "restricted"
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ts3audiobot-data
+  namespace: musikbot
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 2Gi
+  # storageClassName: <StorageClass mit Encryption-at-Rest>
+---
+# Konfiguration + Geheimnisse. Produktiv via Sealed-Secrets / Vault befüllen,
+# NICHT im Klartext einchecken. Inhalte stammen aus config/*.example.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ts3audiobot-config
+  namespace: musikbot
+type: Opaque
+stringData:
+  ts3audiobot.toml: |
+    # -> Inhalt aus config/ts3audiobot.toml.example, gehärtet
+  bot.toml: |
+    # -> Inhalt aus config/bot.toml.example (enthält Server-Passwort/Identität!)
+  rights.toml: |
+    # -> Inhalt aus config/rights.toml.example (Least-Privilege)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ts3audiobot
+  namespace: musikbot
+  labels:
+    app: ts3audiobot
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate          # Single-Writer auf das Datenvolume
+  selector:
+    matchLabels:
+      app: ts3audiobot
+  template:
+    metadata:
+      labels:
+        app: ts3audiobot
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1654       # 'app'-User der chiseled .NET-Images
+        runAsGroup: 1654
+        fsGroup: 1654         # K8s chownt das Volume -> kein Root-Entrypoint
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: ts3audiobot
+          image: registry.intern.desolic.de/ts3-musikbot@sha256:REPLACE_WITH_DIGEST
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: web
+              containerPort: 58913
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            tcpSocket:
+              port: web
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: web
+            initialDelaySeconds: 45
+            periodSeconds: 20
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+            # Konfig-Dateien schreibgeschützt aus dem Secret einspielen
+            - name: config
+              mountPath: /data/ts3audiobot.toml
+              subPath: ts3audiobot.toml
+              readOnly: true
+            - name: config
+              mountPath: /data/bots/default/bot.toml
+              subPath: bot.toml
+              readOnly: true
+            - name: config
+              mountPath: /data/rights.toml
+              subPath: rights.toml
+              readOnly: true
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: ts3audiobot-data
+        - name: tmp
+          emptyDir: {}
+        - name: config
+          secret:
+            secretName: ts3audiobot-config
+            defaultMode: 0400
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ts3audiobot
+  namespace: musikbot
+spec:
+  type: ClusterIP            # KEIN hostPort/NodePort
+  selector:
+    app: ts3audiobot
+  ports:
+    - name: web
+      port: 58913
+      targetPort: web
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ts3audiobot
+  namespace: musikbot
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt        # TLS-Terminierung
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  tls:
+    - hosts: ["musikbot.desolic.de"]
+      secretName: ts3audiobot-tls
+  rules:
+    - host: musikbot.desolic.de
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ts3audiobot
+                port:
+                  number: 58913
+---
+# Default-Deny + gezielte Egress-Freigaben.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ts3audiobot
+  namespace: musikbot
+spec:
+  podSelector:
+    matchLabels:
+      app: ts3audiobot
+  policyTypes: ["Ingress", "Egress"]
+  ingress:
+    # WebAPI nur vom Ingress-Controller erreichbar
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 58913
+  egress:
+    # DNS-Auflösung
+    - to: []
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+    # TeamSpeak-Server (Voice 9987/UDP) + HTTPS (yt-dlp/YouTube-Resolver)
+    - to: []
+      ports:
+        - { protocol: UDP, port: 9987 }
+        - { protocol: TCP, port: 443 }
