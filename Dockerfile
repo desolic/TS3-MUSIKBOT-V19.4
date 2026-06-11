@@ -12,7 +12,7 @@
 #   * Läuft als non-root (UID 1654), keine Secrets im Image                   #
 #                                                                             #
 # Vor dem ersten Build die mit REPLACE_WITH_* markierten Werte einmalig mit    #
-# echten, geprüften SHA256-Summen / Image-Digests füllen (siehe SECURITY.md). #
+# echten, geprüften SHA256-Summen / Image-Digests füllen (siehe README).       #
 ###############################################################################
 
 ###############################################################################
@@ -63,7 +63,7 @@ RUN wget -q -O ffmpeg.tar.xz "${FFMPEG_URL}" \
 ###############################################################################
 # Stage 2 — minimales, non-root, distroless-artiges Runtime-Image             #
 # Hinweis: Den .NET-Tag an das Ziel-Framework der gewählten TSAB_VERSION       #
-# anpassen (siehe SECURITY.md). chiseled = keine Shell, kein apt -> wenig CVE. #
+# anpassen (siehe README). chiseled = keine Shell, kein apt -> wenig CVE.      #
 ###############################################################################
 FROM mcr.microsoft.com/dotnet/runtime:8.0-noble-chiseled@sha256:REPLACE_WITH_DOTNET_DIGEST
 
