@@ -1,0 +1,17 @@
+# Echte Konfiguration & Geheimnisse NIEMALS einchecken — nur *.example liegt im Repo
+config/*.toml
+!config/*.toml.example
+*.key
+*.pem
+*.crt
+*.p12
+
+# Laufzeit-/Bot-Daten
+data/
+*.db
+*.log
+
+# lokale Umgebungsdateien
+.env
+.env.*
+!.env.example

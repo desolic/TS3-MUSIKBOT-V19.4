@@ -1,0 +1,27 @@
+# =============================================================================
+# bots/<name>/bot.toml — Bot-Verbindung (TEMPLATE)
+# Pfad in /data: /data/bots/default/bot.toml
+#
+# ENTHÄLT GEHEIMNISSE (Server-Passwort, Identität) -> NIEMALS ins Git einchecken.
+# Produktiv über ein K8s-Secret nach /data/bots/default/bot.toml mounten.
+# Schema-Namen ggf. mit der von deiner Version erzeugten bot.toml abgleichen.
+# =============================================================================
+
+[connect]
+# Ziel-TeamSpeak-Server (DNS oder IP). Nur diesen Host in der NetworkPolicy
+# freigeben.
+address = "ts3.example.com"
+# Standard-Channel beim Verbinden (optional).
+channel = ""
+# Anzeigename des Bots auf dem Server.
+name = "DESOLIC-Musikbot"
+
+[connect.server_password]
+# Server-Passwort (falls gesetzt). Aus dem Secret befüllen.
+pw = ""
+
+[connect.identity]
+# TeamSpeak-Identität (Private Key). Wird beim ersten Start erzeugt, falls leer.
+# Behandeln wie einen geheimen Schlüssel.
+key = ""
+offset = 0

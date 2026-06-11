@@ -1,0 +1,29 @@
+# =============================================================================
+# rights.toml — Berechtigungen (TEMPLATE, Least-Privilege)
+# Pfad in /data: /data/rights.toml
+#
+# Prinzip: standardmäßig wenig erlauben, Admin-Rechte nur an eindeutig
+# identifizierte Personen (per TeamSpeak-UID), NICHT an "alle".
+# Schema mit der von deiner Version erzeugten rights.toml abgleichen.
+# =============================================================================
+
+# --- Admins: nur konkrete TS3-Identitäten (ClientUid) ---
+[[rule]]
+    uid = ["REPLACE_WITH_ADMIN_TS3_UID="]   # TS3-UID des/der Admins eintragen
+    "+" = ["*"]                              # volle Rechte NUR für diese UIDs
+
+# --- Standardnutzer: nur Wiedergabe-Basisfunktionen, keine Adminrechte ---
+[[rule]]
+    "+" = [
+        "cmd.play",
+        "cmd.add",
+        "cmd.song",
+        "cmd.list.show",
+        "cmd.help",
+    ]
+    "-" = [
+        "cmd.bot.*",      # keine Bot-Verwaltung
+        "cmd.settings.*", # keine Konfigurationsänderung
+        "cmd.rights.*",   # keine Rechteänderung
+        "cmd.system.*",   # kein Shutdown/Eval o. ä.
+    ]

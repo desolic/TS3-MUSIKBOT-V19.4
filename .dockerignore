@@ -1,4 +1,18 @@
 .git/
 README*
 LICENSE
+SECURITY.md
+DATENSCHUTZ.md
 kubernetes/
+config/
+.env*
+# Secrets / lokale Artefakte NIE in den Build-Kontext
+*.toml
+!*.toml.example
+*.key
+*.pem
+*.crt
+*.p12
+*.db
+*.log
+data/
