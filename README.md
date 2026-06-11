@@ -5,8 +5,7 @@ Gehärtetes Container-Image für einen TeamSpeak-3-Musikbot auf Basis von
 **TS3AudioBot** (Open Source, MIT). Headless (kein GUI-/VNC-Stack), non-root,
 distroless-artige .NET-Runtime, reproduzierbar gepinnt.
 
-> Hinweis: Diese Version ersetzt die frühere SinusBot-Lösung (Open-Source-Engine,
-> kein GUI-/VNC-Stack, kein Lizenz-Phone-Home).
+> Für weitere Informationen das Dokument "DESOLIC – LEITFADEN TS3-MUSIKBOT" im Intranet aufrufen.
 
 ## Komponenten
 
