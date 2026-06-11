@@ -1,7 +1,6 @@
 .git/
 README*
 LICENSE
-SECURITY.md
 DATENSCHUTZ.md
 kubernetes/
 config/
